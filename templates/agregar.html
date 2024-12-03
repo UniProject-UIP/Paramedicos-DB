@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Receta</title>
+</head>
+<body>
+    <h1>➕ Agregar nueva receta</h1>
+    <form method="post">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required>
+        <br>
+        <label for="ingredientes">Ingredientes:</label>
+        <textarea id="ingredientes" name="ingredientes" required></textarea>
+        <br>
+        <label for="pasos">Pasos:</label>
+        <textarea id="pasos" name="pasos" required></textarea>
+        <br>
+        <button type="submit">Guardar</button>
+    </form>
+    <a href="{{ url_for('index') }}">⬅️ Volver al inicio</a>
+</body>
+</html>
