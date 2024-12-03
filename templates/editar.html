@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar {{ nombre }}</title>
-</head>
-<body>
-    <h1>✏️ Editar receta: {{ nombre }}</h1>
+{% extends "base.html" %}
+
+{% block title %}Editar {{ nombre }}{% endblock %}
+
+{% block content %}
+    <h2>Editar Receta: {{ nombre }}</h2>
     <form method="post">
         <label for="ingredientes">Ingredientes:</label>
         <textarea id="ingredientes" name="ingredientes" required>{{ receta['ingredientes'] }}</textarea>
@@ -17,5 +14,5 @@
         <button type="submit">Guardar cambios</button>
     </form>
     <a href="{{ url_for('ver_receta', nombre=nombre) }}">⬅️ Cancelar</a>
-</body>
-</html>
+{% endblock %}
+
