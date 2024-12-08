@@ -1,30 +1,23 @@
-import redis
+from pymongo import MongoClient
 import hashlib
 
-# Configuración de conexión a KeyDB
-keydb = redis.StrictRedis(
-    host='localhost',  # Cambia a la IP o hostname de tu servidor KeyDB
-    port=6379,  # Puerto de KeyDB
-    db=1,
-    decode_responses=True  # Para manejar strings en lugar de bytes
-)
+# Configuración de conexión a MongoDB
+mongo_client = MongoClient('mongodb://localhost:27017')  # Cambia esto según tu configuración
+db = mongo_client["hospitales_db"]  # Base de datos
+collection = db["ids_hospitales"]  # Colección
 
 
 def verificardata(hospital_id, nombre_completo, nombre_hospital):
     """
-    Verifica si los datos ya tienen un ID asociado en KeyDB.
+    Verifica si los datos ya tienen un ID asociado en MongoDB.
     """
-    for key in keydb.scan_iter():  # Escanea todas las claves en KeyDB
-        # Verificar que la clave es del tipo 'hash'
-        if keydb.type(key) != "hash":
-            continue  # Si no es un hash, saltar a la siguiente clave
-
-        datos = keydb.hgetall(key)  # Obtener los datos del hash
-        if (datos.get("hospital_id") == hospital_id and
-            datos.get("nombre_completo") == nombre_completo and
-            datos.get("nombre_hospital") == nombre_hospital):
-            return key  # Retorna el ID existente si encuentra una coincidencia
-    return None
+    query = {
+        "hospital_id": hospital_id,
+        "nombre_completo": nombre_completo,
+        "nombre_hospital": nombre_hospital
+    }
+    result = collection.find_one(query)  # Busca un documento que coincida con los datos
+    return result["_id"] if result else None
 
 
 def genuid(hospital_id, nombre_completo, nombre_hospital):
@@ -43,28 +36,32 @@ def genuid(hospital_id, nombre_completo, nombre_hospital):
     # Crear un hash MD5 y truncar los primeros 6 caracteres
     hash_id = hashlib.md5(base_string.encode()).hexdigest()[:6]
 
-    # Comprobar si el ID ya existe en KeyDB
-    while keydb.exists(hash_id):
+    # Comprobar si el ID ya existe en MongoDB
+    while collection.find_one({"_id": hash_id}):  # Consulta por _id en MongoDB
         # Si el ID ya existe, genera un nuevo hash añadiendo un contador
         base_string += "1"
         hash_id = hashlib.md5(base_string.encode()).hexdigest()[:6]
 
-    # Guardar los datos asociados en KeyDB
+    # Guardar los datos asociados en MongoDB
     datos = {
+        "_id": hash_id,  # MongoDB usa "_id" como clave primaria
         "hospital_id": hospital_id,
         "nombre_completo": nombre_completo,
         "nombre_hospital": nombre_hospital
     }
-    keydb.hset(hash_id, mapping=datos)  # Uso de hset en lugar de hmset
+    collection.insert_one(datos)  # Inserta el documento en la colección
 
     return hash_id
 
 
 def obteneruid(hash_id):
     """
-    Recupera los datos asociados a un ID único desde KeyDB.
+    Recupera los datos asociados a un ID único desde MongoDB.
     """
-    return keydb.hgetall(hash_id)
+    result = collection.find_one({"_id": hash_id})  # Busca por _id
+    if result:
+        del result["_id"]  # Opcional: eliminar el _id del resultado si no se necesita
+    return result
 
 
 # Ejemplo de uso
@@ -84,3 +81,4 @@ if __name__ == "__main__":
     datos = obteneruid(short_id) if 'short_id' in locals() else None
     if datos:
         print(f"Datos asociados: {datos}")
+
